@@ -1,0 +1,19 @@
+{
+    "name": "peerj/mpdf-bundle",
+    "type": "library",
+    "description": "Symofony2 Bundle wrapper around mdf",
+    "keywords": [ "mpdf", "pdf", "bundle" ],
+    "license": "MIT",
+    "authors": [
+    {
+        "name": "Patrick McAndrew",
+        "email": "patrick@peerj.com"
+    }
+    ],
+    "require": {
+        "mpdf/mpdf": ">=5.7.0"
+    },
+    "autoload": {
+       "psr-0": { "PeerJ\\Mdf": "src" }
+    }
+}
