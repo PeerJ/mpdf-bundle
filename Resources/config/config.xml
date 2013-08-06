@@ -12,6 +12,7 @@
         <service id="peerj_mpdf" class="%peerj_mpdf.class%">
             <argument type="service" id="twig" />
             <argument type="service" id="logger" />
+            <argument>%kernel.cache_dir%</argument>
         </service>
     </services>
 </container>
