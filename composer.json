@@ -14,6 +14,6 @@
         "mpdf/mpdf": ">=5.7.0"
     },
     "autoload": {
-       "psr-0": { "PeerJ\\Mdf": "src" }
+       "psr-0": { "PeerJ\\Bundle\\MdfBundle": "src" }
     }
 }
