@@ -13,7 +13,7 @@ class PeerjMpdfExtension extends Extension
     /**
      * Build the extension services
      *
-     * @param array $configs
+     * @param array            $configs
      * @param ContainerBuilder $container
      */
     public function load(array $configs, ContainerBuilder $container)

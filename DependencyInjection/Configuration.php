@@ -13,8 +13,8 @@ class Configuration implements ConfigurationInterface
 
         $builder->root('peerj_mpdf')
             ->addDefaultsIfNotSet()
-            ->end()
-        ;
+            ->end();
+
         return $builder;
     }
 }
