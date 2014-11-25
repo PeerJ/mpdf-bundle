@@ -11,8 +11,14 @@
     }
     ],
     "require": {
-        "mpdf/mpdf": ">=5.7.0"
+        "peerj/mpdf": ">=5.7.0"
     },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/PeerJ/mpdf.git"
+        }
+    ],
     "autoload": {
        "psr-0": { "Peerj\\Bundle\\MpdfBundle": "" }
     },
