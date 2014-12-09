@@ -13,6 +13,26 @@ class Configuration implements ConfigurationInterface
 
         $builder->root('peerj_mpdf')
             ->addDefaultsIfNotSet()
+            ->children()
+                ->arrayNode('fonts')
+                    ->useAttributeAsKey('name')
+                    ->prototype('array')
+                        ->children()
+                            ->scalarNode('name')->end()
+                            ->scalarNode('path')->end()
+                            ->arrayNode('family')
+                                ->children()
+                                    ->scalarNode('R')->isRequired()->end()
+                                    ->scalarNode('B')->end()
+                                    ->scalarNode('I')->end()
+                                    ->scalarNode('BI')->end()
+                                    ->scalarNode('indic')->end()
+                                    ->scalarNode('sip-ext')->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $builder;

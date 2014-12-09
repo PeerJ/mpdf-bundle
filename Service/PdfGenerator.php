@@ -27,6 +27,11 @@ class PdfGenerator
     protected $start_time;
 
     /**
+     * @var boolean
+     */
+    protected $isInitialized = false;
+
+    /**
      * @param $renderer
      * @param $logger
      * @param $cache_dir
@@ -56,6 +61,39 @@ class PdfGenerator
         $this->logger = $logger;
     }
 
+    /*
+     * Initialize Mpdf
+     * Would expect this to be called from DI
+     *
+     * @param array $additionalFonts
+     */
+    public function initMpdf($additionalFonts = array())
+    {
+        $this->mpdf = new mPDF($additionalFonts);
+    }
+
+    /*
+     * Copy font files to _MPDF_TTFONTPATH
+     * Shame that _MPDF_SYSTEM_TTFONTS only allows 1 folder
+     *
+     * @param array $fontFiles expected array(array('path'=>'','file'=>''),...)
+     */
+    public function copyFontFiles($fontFiles = array())
+    {
+        if (!defined(_MPDF_TTFONTPATH)) {
+            $tmpMpdf = new mPDF();
+        }
+
+        foreach(array_values($fontFiles) as $fontFile) {
+            $source = sprintf("%s/%s", $fontFile['path'], $fontFile['file']);
+            $dest = sprintf("%s%s", _MPDF_TTFONTPATH, $fontFile['file']);
+            if (!file_exists($dest)) {
+                copy($source, $dest);
+                $this->logger->debug(sprintf("Copying font file %s to %s", $source, $dest));
+            }
+        }
+    }
+
     /**
      * @param string $mode
      * @param string $format
@@ -73,7 +111,12 @@ class PdfGenerator
     public function init($mode = '', $format = '', $default_font_size = '', $default_font = '', $margin_left = '', $margin_right = '', $margin_top = '', $margin_bottom = '', $margin_header = '', $margin_footer = '', $orientation = '')
     {
         $this->start_time = microtime(true);
-        $this->mpdf = new mPDF($mode, $format, $default_font_size, $default_font, $margin_left, $margin_right, $margin_top, $margin_bottom, $margin_header, $margin_footer, $orientation);
+        if (!$this->mpdf) {
+            $this->initMpdf();
+        }
+
+        $this->mpdf->mPDF($mode, $format, $default_font_size, $default_font, $margin_left, $margin_right, $margin_top, $margin_bottom, $margin_header, $margin_footer, $orientation);
+        $this->isInitialized = true;
 
         $this->logger->debug("peerj_mpdf: Using temp folder " . _MPDF_TEMP_PATH);
         $this->logger->debug("peerj_mpdf: Using font folder " . _MPDF_TTFONTDATAPATH);
@@ -112,11 +155,13 @@ class PdfGenerator
      * Set html
      * @param string $html
      */
-    public function setHtml($html)
+    public function setHtml($html, $useSubstitutions = false)
     {
-        if (!$this->mpdf) {
+        if (!$this->isInitialized) {
             $this->init();
         }
+        // If using substitutions, must be set prior to WriteHTML
+        $this->mpdf->useSubstitutions = $useSubstitutions;
         $this->mpdf->WriteHTML($html);
     }
 
@@ -125,10 +170,10 @@ class PdfGenerator
      * @param $template
      * @param array $data
      */
-    public function useTwigTemplate($template, array $data = array())
+    public function useTwigTemplate($template, array $data = array(), $useSubstitutions = false)
     {
         $html = $this->renderer->render($template, $data);
-        $this->setHtml($html);
+        $this->setHtml($html, $useSubstitutions);
 
         return $this;
     }
@@ -139,7 +184,7 @@ class PdfGenerator
      */
     public function generate()
     {
-        if (!$this->mpdf) {
+        if (!$this->isInitialized) {
             $this->init();
         }
 
