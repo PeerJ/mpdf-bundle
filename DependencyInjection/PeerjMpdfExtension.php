@@ -26,22 +26,19 @@ class PeerjMpdfExtension extends Extension
         $configuration = new Configuration();
         $config = $processor->processConfiguration($configuration, $configs);
 
-        $additionalFonts = array();
         $copyFontFiles = array();
         if (!empty($config['fonts'])) {
-            foreach($config['fonts'] as $name => $font) {
-                $additionalFonts[$name] = $font['family'];
+            foreach ($config['fonts'] as $name => $font) {
 
                 // only copy if path is present
                 if (isset($font['path'])) {
-                    foreach($font['family'] as $type => $file) {
+                    foreach ($font['family'] as $type => $file) {
                         $copyFontFiles[] = array('path' => $font['path'], 'file' => $file);
                     }
                 }
             }
         }
 
-        $container->getDefinition('peerj_mpdf')->addMethodCall('initMpdf', array($additionalFonts));
         $container->getDefinition('peerj_mpdf')->addMethodCall('copyFontFiles', array($copyFontFiles));
     }
 }

@@ -1,7 +1,8 @@
 <?php
 namespace Peerj\Bundle\MpdfBundle\Service;
 
-use mPDF;
+use Mpdf\Config;
+use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\Response;
 
 class PdfGenerator
@@ -57,11 +58,18 @@ class PdfGenerator
             define("_MPDF_TTFONTDATAPATH", $font_folder);
         }
 
+        // Just getting this working
+        // TODO: accept custom fonts?
+        $this->mpdf = new Mpdf([
+            'tempDir' => $tmp_folder,
+        ]);
+        $this->isInitialized = true;
+
         $this->renderer = $renderer;
         $this->logger = $logger;
     }
 
-    /*
+    /**
      * Initialize Mpdf
      * Would expect this to be called from DI
      *
@@ -69,10 +77,14 @@ class PdfGenerator
      */
     public function initMpdf($additionalFonts = array())
     {
-        $this->mpdf = new mPDF($additionalFonts);
+        $defaultConfig = (new Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
     }
 
-    /*
+    /**
      * Copy font files to _MPDF_TTFONTPATH
      * Shame that _MPDF_SYSTEM_TTFONTS only allows 1 folder
      *
@@ -80,11 +92,7 @@ class PdfGenerator
      */
     public function copyFontFiles($fontFiles = array())
     {
-        if (!defined(_MPDF_TTFONTPATH)) {
-            $tmpMpdf = new mPDF();
-        }
-
-        foreach(array_values($fontFiles) as $fontFile) {
+        foreach (array_values($fontFiles) as $fontFile) {
             $source = sprintf("%s/%s", $fontFile['path'], $fontFile['file']);
             $dest = sprintf("%s%s", _MPDF_TTFONTPATH, $fontFile['file']);
             if (!file_exists($dest)) {
@@ -115,7 +123,6 @@ class PdfGenerator
             $this->initMpdf();
         }
 
-        $this->mpdf->mPDF($mode, $format, $default_font_size, $default_font, $margin_left, $margin_right, $margin_top, $margin_bottom, $margin_header, $margin_footer, $orientation);
         $this->isInitialized = true;
 
         $this->logger->debug("peerj_mpdf: Using temp folder " . _MPDF_TEMP_PATH);
