@@ -50,14 +50,6 @@ class PdfGenerator
         if (!is_dir($font_folder)) {
             mkdir($font_folder);
         }
-
-        if (!defined('_MPDF_TEMP_PATH')) {
-            define("_MPDF_TEMP_PATH", $tmp_folder);
-        }
-        if (!defined('_MPDF_TTFONTDATAPATH')) {
-            define("_MPDF_TTFONTDATAPATH", $font_folder);
-        }
-
         // Just getting this working
         // TODO: accept custom fonts?
         $this->mpdf = new Mpdf([
@@ -94,7 +86,7 @@ class PdfGenerator
     {
         foreach (array_values($fontFiles) as $fontFile) {
             $source = sprintf("%s/%s", $fontFile['path'], $fontFile['file']);
-            $dest = sprintf("%s%s", _MPDF_TTFONTPATH, $fontFile['file']);
+            $dest = sprintf("%s%s", '/tmp/', $fontFile['file']);
             if (!file_exists($dest)) {
                 copy($source, $dest);
                 $this->logger->debug(sprintf("Copying font file %s to %s", $source, $dest));
@@ -124,9 +116,6 @@ class PdfGenerator
         }
 
         $this->isInitialized = true;
-
-        $this->logger->debug("peerj_mpdf: Using temp folder " . _MPDF_TEMP_PATH);
-        $this->logger->debug("peerj_mpdf: Using font folder " . _MPDF_TTFONTDATAPATH);
     }
 
     /**
