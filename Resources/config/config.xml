@@ -11,8 +11,6 @@
     <services>
         <service id="peerj_mpdf" class="%peerj_mpdf.class%">
             <argument type="service" id="templating" />
-            <argument type="service" id="logger" />
-            <argument>%kernel.cache_dir%</argument>
         </service>
     </services>
 </container>

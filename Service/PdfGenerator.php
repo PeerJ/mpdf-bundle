@@ -3,209 +3,147 @@ namespace Peerj\Bundle\MpdfBundle\Service;
 
 use Mpdf\Config;
 use Mpdf\Mpdf;
+
+use Symfony\Bridge\Twig\TwigEngine;
 use Symfony\Component\HttpFoundation\Response;
 
 class PdfGenerator
 {
     /**
-     * @var mPDF
-     */
-    protected $mpdf;
-
-    /**
-     * @var \Symfony\Bridge\Twig\TwigEngine;
+     * @var TwigEngine
      */
     protected $renderer;
 
-    /**
-     * @var \Symfony\Bridge\Monolog\Logger
-     */
-    protected $logger;
+    /** @var string */
+    protected $tmpFolder;
 
-    /**
-     * @var float
-     */
-    protected $start_time;
+    /** @var array */
+    protected $additionalFontData;
 
-    /**
-     * @var boolean
-     */
-    protected $isInitialized = false;
+    /** @var array */
+    protected $additionalFontPaths;
+
+    /** @var string */
+    protected $format;
 
     /**
      * @param $renderer
-     * @param $logger
-     * @param $cache_dir
      */
-    public function __construct($renderer, $logger, $cache_dir)
+    public function __construct($renderer)
     {
-        // vendor folder probably doesn't have write access,
-        // so put the temp folder under the cache folder which should have write access
-        $tmp_folder = $cache_dir . '/tmp/';
-        if (!is_dir($tmp_folder)) {
-            mkdir($tmp_folder);
-        }
-
-        $font_folder = $cache_dir . '/ttfontdata/';
-        if (!is_dir($font_folder)) {
-            mkdir($font_folder);
-        }
-        // Just getting this working
-        // TODO: accept custom fonts?
-        $this->mpdf = new Mpdf([
-            'tempDir' => $tmp_folder,
-        ]);
-        $this->isInitialized = true;
-
         $this->renderer = $renderer;
-        $this->logger = $logger;
     }
 
     /**
-     * Initialize Mpdf
-     * Would expect this to be called from DI
-     *
      * @param array $additionalFonts
      */
-    public function initMpdf($additionalFonts = array())
+    public function initMpdf($additionalFonts, $format, $tmpFolder)
     {
+        $this->format = $format;
+        if (!is_dir($tmpFolder)) {
+            mkdir($tmpFolder);
+        }
+        $this->tmpFolder = $tmpFolder;
+
+        $this->additionalFontData = [];
+        $this->additionalFontPaths = [];
+
+        foreach ($additionalFonts as $name => $info) {
+            $this->additionalFontData[$name] = $info['data'];
+            $this->additionalFontPaths[] = $info['path'];
+        }
+    }
+
+    public function startPdf() {
         $defaultConfig = (new Config\ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
+        $fontDirs = array_merge($defaultConfig['fontDir'], $this->additionalFontPaths);
 
         $defaultFontConfig = (new Config\FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
-    }
+        $fontData = array_merge($defaultFontConfig['fontdata'], $this->additionalFontData);
 
-    /**
-     * Copy font files to _MPDF_TTFONTPATH
-     * Shame that _MPDF_SYSTEM_TTFONTS only allows 1 folder
-     *
-     * @param array $fontFiles expected array(array('path'=>'','file'=>''),...)
-     */
-    public function copyFontFiles($fontFiles = array())
-    {
-        foreach (array_values($fontFiles) as $fontFile) {
-            $source = sprintf("%s/%s", $fontFile['path'], $fontFile['file']);
-            $dest = sprintf("%s%s", '/tmp/', $fontFile['file']);
-            if (!file_exists($dest)) {
-                copy($source, $dest);
-                $this->logger->debug(sprintf("Copying font file %s to %s", $source, $dest));
-            }
-        }
-    }
-
-    /**
-     * @param string $mode
-     * @param string $format
-     * @param string $default_font_size
-     * @param string $default_font
-     * @param string $margin_left
-     * @param string $margin_right
-     * @param string $margin_top
-     * @param string $margin_bottom
-     * @param string $margin_header
-     * @param string $margin_footer
-     * @param string $orientation
-     * @see mPDF
-     */
-    public function init($mode = '', $format = '', $default_font_size = '', $default_font = '', $margin_left = '', $margin_right = '', $margin_top = '', $margin_bottom = '', $margin_header = '', $margin_footer = '', $orientation = '')
-    {
-        $this->start_time = microtime(true);
-        if (!$this->mpdf) {
-            $this->initMpdf();
-        }
-
-        $this->isInitialized = true;
+        return new Mpdf([
+            'fontDir' => $fontDirs,
+            'fontData' => $fontData,
+            'tempDir' => $this->tmpFolder,
+            'format' => $this->format,
+        ]);
     }
 
     /**
      * Set property of mPDF
-     * @param $name
-     * @param $value
+     * @param Mpdf   $pdf
+     * @param string $name
+     * @param string $value
      */
-    public function setProperty($name, $value)
+    public function setProperty($pdf, $name, $value)
     {
-        $this->mpdf->{$name} = $value;
+        $pdf->{$name} = $value;
     }
 
     /**
      * Call method of mPDF
-     * @param $name
-     * @param array $data
+     * @param Mpdf   $pdf
+     * @param string $name
+     * @param array  $data
      */
-    public function callMethod($name, array $data)
+    public function callMethod($pdf, $name, array $data = [])
     {
-        call_user_func_array(array($this->mpdf, $name), $data);
-    }
-
-    /**
-     * Get instance of mPDF object
-     * @return mPDF
-     */
-    public function getMpdf()
-    {
-        return $this->mpdf;
+        call_user_func_array(array($pdf, $name), $data);
     }
 
     /**
      * Set html
+     * @param Mpdf   $pdf
      * @param string $html
+     * @param bool   $useSubstitutions
+     *
      */
-    public function setHtml($html, $useSubstitutions = false)
+    public function setHtml($pdf, $html, $useSubstitutions = false)
     {
-        if (!$this->isInitialized) {
-            $this->init();
-        }
         // If using substitutions, must be set prior to WriteHTML
-        $this->mpdf->useSubstitutions = $useSubstitutions;
-        $this->mpdf->WriteHTML($html);
+        $pdf->useSubstitutions = $useSubstitutions;
+        $pdf->WriteHTML($html);
     }
 
     /**
      * Renders and set as html the template with the given context
-     * @param $template
-     * @param array $data
+     * @param Mpdf   $pdf
+     * @param string $template
+     * @param array  $data
      */
-    public function useTwigTemplate($template, array $data = array(), $useSubstitutions = false)
+    public function useTwigTemplate($pdf, $template, array $data = array(), $useSubstitutions = false)
     {
         $html = $this->renderer->render($template, $data);
-        $this->setHtml($html, $useSubstitutions);
+        $this->setHtml($pdf, $html, $useSubstitutions);
 
-        return $this;
+        return $pdf;
     }
 
     /**
      * Generate pdf document and return it as string
+     * @param Mpdf $pdf
      * @return string
      */
-    public function generate()
+    public function generate($pdf)
     {
-        if (!$this->isInitialized) {
-            $this->init();
-        }
-
         // Better to avoid having mpdf set any headers as these can interfer with symfony responses
-        $output = $this->mpdf->Output('', 'S');
-
-        $time = microtime(true) - $this->start_time;
-        $this->logger->debug("peerj_mpdf: pdf generation took " . $time . " seconds");
-
-        return $output;
+        return $pdf->Output('', 'S');
     }
 
     /**
      * Generate pdf document and returns it as Response object
+     * @param Mpdf $pdf
      * @param $filename
      * @return Response
      */
-    public function generateInlineFileResponse($filename)
+    public function generateInlineFileResponse($pdf, $filename)
     {
         $headers = array(
             'content-type' => 'application/pdf',
             'content-disposition' => sprintf('inline; filename="%s"', $filename),
         );
 
-        $content = $this->generate();
+        $content = $this->generate($pdf);
 
         return new Response($content, 200, $headers);
     }
