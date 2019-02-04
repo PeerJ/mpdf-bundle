@@ -75,7 +75,7 @@ class PdfGenerator
      * @param string $name
      * @param string $value
      */
-    public function setProperty($pdf, $name, $value)
+    public function setProperty(Mpdf $pdf, $name, $value)
     {
         $pdf->{$name} = $value;
     }
@@ -86,7 +86,7 @@ class PdfGenerator
      * @param string $name
      * @param array  $data
      */
-    public function callMethod($pdf, $name, array $data = [])
+    public function callMethod(Mpdf $pdf, $name, array $data = [])
     {
         call_user_func_array(array($pdf, $name), $data);
     }
@@ -98,7 +98,7 @@ class PdfGenerator
      * @param bool   $useSubstitutions
      *
      */
-    public function setHtml($pdf, $html, $useSubstitutions = false)
+    public function setHtml(Mpdf $pdf, $html, $useSubstitutions = false)
     {
         // If using substitutions, must be set prior to WriteHTML
         $pdf->useSubstitutions = $useSubstitutions;
@@ -111,7 +111,7 @@ class PdfGenerator
      * @param string $template
      * @param array  $data
      */
-    public function useTwigTemplate($pdf, $template, array $data = array(), $useSubstitutions = false)
+    public function useTwigTemplate(Mpdf $pdf, $template, array $data = array(), $useSubstitutions = false)
     {
         $html = $this->renderer->render($template, $data);
         $this->setHtml($pdf, $html, $useSubstitutions);
@@ -124,7 +124,7 @@ class PdfGenerator
      * @param Mpdf $pdf
      * @return string
      */
-    public function generate($pdf)
+    public function generate(Mpdf $pdf)
     {
         // Better to avoid having mpdf set any headers as these can interfer with symfony responses
         return $pdf->Output('', 'S');
@@ -136,7 +136,7 @@ class PdfGenerator
      * @param $filename
      * @return Response
      */
-    public function generateInlineFileResponse($pdf, $filename)
+    public function generateInlineFileResponse(Mpdf $pdf, $filename)
     {
         $headers = array(
             'content-type' => 'application/pdf',
