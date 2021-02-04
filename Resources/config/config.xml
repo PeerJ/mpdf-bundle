@@ -9,7 +9,7 @@
     </parameters>
 
     <services>
-        <service id="peerj_mpdf" class="%peerj_mpdf.class%">
+        <service id="peerj_mpdf" class="%peerj_mpdf.class%" public="true">
             <argument type="service" id="templating" />
         </service>
     </services>

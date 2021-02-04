@@ -9,10 +9,15 @@ class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()
     {
-        $builder = new TreeBuilder();
+        $builder = new TreeBuilder('peerj_mpdf');
+        if (\method_exists($builder, 'getRootNode')) {
+            $rootNode = $builder->getRootNode();
+        } else {
+            // BC layer for symfony/config 4.1 and older
+            $rootNode = $builder->root('peerj_mpdf', 'array');
+        }
 
-        $builder->root('peerj_mpdf')
-            ->addDefaultsIfNotSet()
+        $rootNode->addDefaultsIfNotSet()
             ->children()
                 ->scalarNode('format')->end()
                 ->scalarNode('tmp_dir')->end()
