@@ -1,7 +1,7 @@
 {
     "name": "peerj/mpdf-bundle",
     "type": "library",
-    "description": "Symofony2 Bundle wrapper around mdf",
+    "description": "Symfony2 Bundle wrapper around mdf",
     "keywords": [ "mpdf", "pdf", "bundle" ],
     "license": "MIT",
     "authors": [
@@ -11,7 +11,8 @@
     }
     ],
     "require": {
-        "mpdf/mpdf": ">=5.7.0"
+        "php": "^5.6 || ~7.2.0",
+        "mpdf/mpdf": "^7.1"
     },
     "autoload": {
        "psr-0": { "Peerj\\Bundle\\MpdfBundle": "" }

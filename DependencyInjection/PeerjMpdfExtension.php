@@ -25,5 +25,7 @@ class PeerjMpdfExtension extends Extension
 
         $configuration = new Configuration();
         $config = $processor->processConfiguration($configuration, $configs);
+
+        $container->getDefinition('peerj_mpdf')->addMethodCall('initMpdf', array($config['fonts'], $config['format'], $config['tmp_dir']));
     }
 }
